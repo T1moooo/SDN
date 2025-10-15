@@ -1,0 +1,7 @@
+policies:
+- action:
+    set_priority: af41
+  match:
+    source_ip: 10.1.1.10/32
+  name: ensure-course-selection-priority
+  target_interface: Ethernet1/1
