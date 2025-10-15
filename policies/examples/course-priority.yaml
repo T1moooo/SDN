@@ -1,0 +1,53 @@
+---
+# SDN QoS 策略示例 - 选课系统高优先级
+# 确保校园网选课系统流量获得最高优先级，避免拥塞
+
+id: course-priority-v1
+name: "选课系统高优先级策略"
+description: "确保选课系统流量获得最高优先级（DSCP EF），避免选课高峰期拥塞"
+
+# 定义访问控制列表（ACL）
+access_lists:
+  - name: ACL_COURSE_SELECTION
+    type: ipv4
+    rules:
+      # 允许选课系统服务器的 HTTP/HTTPS 流量
+      - sequence: 10
+        action: permit
+        protocol: tcp
+        source: 10.100.0.0/16      # 选课系统服务器网段
+        destination: any
+        dest_port: [80, 443]        # HTTP 和 HTTPS 端口
+      
+      # 允许选课系统数据库流量
+      - sequence: 20
+        action: permit
+        protocol: tcp
+        source: 10.100.10.0/24      # 数据库服务器
+        destination: any
+        dest_port: [3306, 5432]     # MySQL 和 PostgreSQL
+
+# 定义流分类（Class-map）
+class_maps:
+  - name: CLASS_CRITICAL_APPS
+    match_type: match-any          # 匹配任意一个条件即可
+    conditions:
+      - type: access-group
+        name: ACL_COURSE_SELECTION
+
+# 定义策略映射（Policy-map）
+policy_maps:
+  - name: PM_CAMPUS_QOS
+    classes:
+      # 关键应用类 - 最高优先级
+      - class_name: CLASS_CRITICAL_APPS
+        actions:
+          - type: set
+            parameter: dscp
+            value: ef              # Expedited Forwarding (最高优先级)
+
+# 应用到接口（Service-policy）
+service_policies:
+  - interface: Ethernet1/1         # 上行接口
+    direction: input               # 入方向
+    policy_map: PM_CAMPUS_QOS

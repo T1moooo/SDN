@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDN QoS 策略管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🌐 SDN QoS 策略管理系统</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="active">策略列表</a>
+                <a href="/upload">上传策略</a>
+                <a href="/logs">操作日志</a>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="label">交换机:</span>
+                    <span id="switch-ip" class="value">加载中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">连接状态:</span>
+                    <span id="connection-status" class="value status-loading">检测中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">策略数量:</span>
+                    <span id="policy-count" class="value">0</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="window.location.href='/upload'">
+                    📤 上传新策略
+                </button>
+                <button class="btn btn-secondary" onclick="refreshPolicies()">
+                    🔄 刷新列表
+                </button>
+                <button class="btn btn-secondary" onclick="testConnection()">
+                    🔌 测试连接
+                </button>
+            </div>
+
+            <!-- 策略列表 -->
+            <div class="card">
+                <h2>策略列表</h2>
+                <div id="loading" class="loading">加载中...</div>
+                <div id="error-message" class="error-message" style="display: none;"></div>
+                
+                <table id="policies-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>策略 ID</th>
+                            <th>名称</th>
+                            <th>描述</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="policies-body">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+
+                <div id="empty-state" style="display: none;" class="empty-state">
+                    <p>📋 还没有策略</p>
+                    <p>点击"上传新策略"开始添加 QoS 策略</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 详情模态框 -->
+        <div id="detail-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>策略详情</h2>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body" id="detail-content">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 预览模态框 -->
+        <div id="preview-modal" class="modal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>命令预览</h2>
+                    <span class="close" onclick="closePreviewModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <pre id="preview-content" class="code-block"></pre>
+                    <div class="modal-actions">
+                        <button class="btn btn-success" onclick="applyPolicyFromPreview()">
+                            ✅ 应用到设备
+                        </button>
+                        <button class="btn btn-secondary" onclick="closePreviewModal()">
+                            ❌ 取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

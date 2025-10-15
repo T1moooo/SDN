@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传策略 - SDN QoS 策略管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🌐 SDN QoS 策略管理系统</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">策略列表</a>
+                <a href="/upload" class="active">上传策略</a>
+                <a href="/logs">操作日志</a>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <div class="card">
+                <h2>📤 上传 QoS 策略</h2>
+                
+                <form id="upload-form" class="upload-form">
+                    <div class="form-group">
+                        <label for="policy-file">选择策略文件 (YAML)</label>
+                        <input type="file" id="policy-file" name="file" accept=".yaml,.yml" required>
+                        <small>支持格式: .yaml, .yml</small>
+                    </div>
+
+                    <div class="form-group">
+                        <div id="file-info" class="file-info" style="display: none;">
+                            <h3>📄 文件信息</h3>
+                            <p><strong>文件名:</strong> <span id="filename"></span></p>
+                            <p><strong>大小:</strong> <span id="filesize"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div id="preview-section" class="preview-section" style="display: none;">
+                            <h3>📋 文件预览</h3>
+                            <pre id="file-preview" class="code-block"></pre>
+                        </div>
+                    </div>
+
+                    <div id="upload-error" class="error-message" style="display: none;"></div>
+                    <div id="upload-success" class="success-message" style="display: none;"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="upload-btn">
+                            ⬆️ 上传策略
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            🔄 重置
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">
+                            ⬅️ 返回列表
+                        </button>
+                    </div>
+
+                    <div id="upload-progress" class="progress-bar" style="display: none;">
+                        <div class="progress-fill"></div>
+                        <span class="progress-text">上传中...</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 帮助信息 -->
+            <div class="card">
+                <h3>📖 策略文件格式说明</h3>
+                <div class="help-content">
+                    <p>策略文件使用 YAML 格式，必须包含以下字段：</p>
+                    <ul>
+                        <li><code>id</code>: 策略唯一标识符</li>
+                        <li><code>name</code>: 策略名称</li>
+                        <li><code>description</code>: 策略描述</li>
+                        <li><code>access_lists</code>: ACL 定义（可选）</li>
+                        <li><code>class_maps</code>: 流分类定义（可选）</li>
+                        <li><code>policy_maps</code>: 策略映射定义</li>
+                        <li><code>service_policies</code>: 接口应用配置</li>
+                    </ul>
+                    
+                    <h4>示例:</h4>
+                    <pre class="code-block">---
+id: course-priority-v1
+name: "选课系统高优先级策略"
+description: "确保选课系统流量获得最高优先级"
+
+access_lists:
+  - name: ACL_COURSE_SELECTION
+    type: ipv4
+    rules:
+      - sequence: 10
+        action: permit
+        protocol: tcp
+        source: 10.100.0.0/16
+        destination: any
+        dest_port: [80, 443]
+
+class_maps:
+  - name: CLASS_CRITICAL_APPS
+    match_type: match-any
+    conditions:
+      - type: access-group
+        name: ACL_COURSE_SELECTION
+
+policy_maps:
+  - name: PM_CAMPUS_QOS
+    classes:
+      - class_name: CLASS_CRITICAL_APPS
+        actions:
+          - type: set
+            parameter: dscp
+            value: ef
+
+service_policies:
+  - interface: Ethernet1/1
+    direction: input
+    policy_map: PM_CAMPUS_QOS</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/upload.js"></script>
+</body>
+</html>

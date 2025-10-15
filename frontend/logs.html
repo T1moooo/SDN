@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>操作日志 - SDN QoS 策略管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🌐 SDN QoS 策略管理系统</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">策略列表</a>
+                <a href="/upload">上传策略</a>
+                <a href="/logs" class="active">操作日志</a>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 过滤器 -->
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <label for="date-filter">日期:</label>
+                    <input type="date" id="date-filter" value="">
+                </div>
+                <div class="filter-item">
+                    <label for="lines-filter">显示行数:</label>
+                    <select id="lines-filter">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="refreshLogs()">
+                    🔄 刷新日志
+                </button>
+                <button class="btn btn-secondary" onclick="exportLogs()">
+                    💾 导出日志
+                </button>
+            </div>
+
+            <!-- 日志列表 -->
+            <div class="card">
+                <h2>📝 操作日志</h2>
+                <div id="loading" class="loading">加载中...</div>
+                <div id="error-message" class="error-message" style="display: none;"></div>
+                
+                <div id="logs-container" style="display: none;">
+                    <div class="logs-stats">
+                        <span>共 <strong id="logs-count">0</strong> 条日志</span>
+                        <span>日期: <strong id="logs-date"></strong></span>
+                    </div>
+                    
+                    <table id="logs-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>级别</th>
+                                <th>操作</th>
+                                <th>策略 ID</th>
+                                <th>消息</th>
+                                <th>详情</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <!-- 动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" style="display: none;" class="empty-state">
+                    <p>📋 当前日期没有日志</p>
+                    <p>选择其他日期查看历史日志</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 详情模态框 -->
+        <div id="detail-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>日志详情</h2>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <pre id="detail-content" class="code-block"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/logs.js"></script>
+</body>
+</html>
