@@ -1,7 +1,13 @@
 # Deployment module for sending commands to the switch
+import os
 import requests
 import json
 import config
+
+# Read DRY_RUN from environment (default False)
+DRY_RUN = os.getenv('DRY_RUN', 'false').lower() in ('1', 'true', 'yes')
+
+
 
 def send_config_commands(commands):
     """
@@ -27,8 +33,14 @@ def send_config_commands(commands):
             "id": i
         })
 
-    print(f"Sending {len(commands)} commands to {config.NXAPI_URL}...")
-    
+    print(f"Sending {len(commands)} commands to {config.NXAPI_URL}... (DRY_RUN={DRY_RUN})")
+
+    if DRY_RUN:
+        # In dry-run mode, do not contact the device; just return the payload for inspection
+        print("Dry-run mode enabled - not sending commands. Payload:")
+        print(json.dumps(payload, indent=2))
+        return True, payload
+
     try:
         # It's highly recommended to use proper certificate management in production
         response = requests.post(
@@ -38,12 +50,36 @@ def send_config_commands(commands):
             data=json.dumps(payload),
             verify=False  # In a lab, we disable SSL verification.
         )
-        response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
     except requests.exceptions.RequestException as e:
         print(f"Error sending commands to switch: {e}")
         return False, [{"error": str(e)}]
 
-    results = response.json()
+    # Don't raise_for_status yet; we want to capture response body for diagnostics
+    status = response.status_code
+    text = None
+    try:
+        text = response.text
+    except Exception:
+        text = '<non-text response>'
+
+    if status >= 400:
+        print(f"Device returned HTTP {status}. Response body:\n{text}")
+        # Save raw response to logs for further analysis if possible
+        try:
+            os.makedirs('logs', exist_ok=True)
+            with open(os.path.join('logs', 'last_deployer_response.txt'), 'w', encoding='utf-8') as fh:
+                fh.write(f"HTTP {status}\n")
+                fh.write(text)
+        except Exception:
+            pass
+        return False, [{"http_status": status, "body": text}]
+
+    # Try to parse JSON; if parsing fails, return raw text
+    try:
+        results = response.json()
+    except ValueError:
+        print("Failed to parse JSON from device response. Raw response:\n" + response.text)
+        return False, [{"http_status": status, "body": response.text}]
     
     # Check for errors in the response from the switch
     # The response is a list if multiple commands were sent

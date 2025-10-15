@@ -1,7 +1,7 @@
 # Policy engine module
 import yaml
 import json
-from deployer import send_config_commands
+from deployer import send_config_commands, DRY_RUN
 
 def _translate_policy_to_commands(policy):
     """
@@ -58,20 +58,33 @@ def apply_policy_from_yaml(yaml_file_path):
         return False, "No valid policies found in the file."
 
     success, results = send_config_commands(all_commands)
-    
+
     if success:
-        return True, "Policy applied successfully."
-    else:
-        # Attempt to format the error message
-        error_details = ""
-        for i, result in enumerate(results):
-            if result and 'error' in result:
-                 # NX-API often puts error details in result -> body -> msg
-                error_body = result.get('result', {}).get('body', {})
-                error_msg = error_body.get('msg', 'Unknown error')
-                error_details += f"Command '{all_commands[i]}' failed: {error_msg}. "
-        
-        return False, f"Failed to apply policy. Details: {error_details or results}"
+        return True, "Policy applied successfully." if not DRY_RUN else "Dry-run: commands generated (not sent)."
+
+    # If failed, try to provide as much raw info as possible
+    # If results contains http_status/body, return that directly
+    if isinstance(results, list) and results and isinstance(results[0], dict) and ('http_status' in results[0] or 'body' in results[0]):
+        return False, f"Failed to apply policy. HTTP status: {results[0].get('http_status')} Body: {results[0].get('body')}"
+
+    # Attempt to format NX-API style errors
+    error_details = ""
+    for i, result in enumerate(results if isinstance(results, list) else [results]):
+        if not result:
+            continue
+        if 'error' in result:
+            err = result['error']
+            err_msg = err.get('message') or err.get('data', {}).get('msg') or str(err)
+            error_details += f"Command '{all_commands[i] if i < len(all_commands) else '?'}' failed: {err_msg}. "
+        elif isinstance(result, dict) and 'result' in result:
+            # Try to dig into result -> body -> msg
+            err_body = result.get('result', {}).get('body', {})
+            if isinstance(err_body, dict):
+                msg = err_body.get('msg') or err_body.get('message')
+                if msg:
+                    error_details += f"Command '{all_commands[i] if i < len(all_commands) else '?'}' failed: {msg}. "
+
+    return False, f"Failed to apply policy. Details: {error_details or results}"
 
 if __name__ == '__main__':
     # Example usage:

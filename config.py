@@ -11,7 +11,8 @@ SWITCH_USERNAME = os.getenv("SWITCH_USERNAME", "admin")
 SWITCH_PASSWORD = os.getenv("SWITCH_PASSWORD", "password")
 
 # NX-API settings
-NXAPI_URL = f"https://{SWITCH_IP}/ins"
+NXAPI_PROTOCOL = "https" if os.getenv("NXAPI_USE_HTTPS", "true").lower() == "true" else "http"
+NXAPI_URL = f"{NXAPI_PROTOCOL}://{SWITCH_IP}/ins"
 NXAPI_HEADERS = {'Content-Type': 'application/json-rpc'}
 
 # Flask settings
