@@ -72,7 +72,7 @@ class NXAPIClient:
         Returns:
             执行结果字典
         """
-        payload = self._build_payload([command], method="cli_show")
+        payload = self._build_payload([command], method="cli")
         
         try:
             response = self._send_request(payload)

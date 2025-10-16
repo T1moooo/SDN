@@ -30,6 +30,9 @@ class JSONFormatter(logging.Formatter):
         if hasattr(record, 'policy_id'):
             log_data['policy_id'] = record.policy_id
         
+        if hasattr(record, 'uploaded_filename'):
+            log_data['uploaded_filename'] = record.uploaded_filename
+        
         if hasattr(record, 'duration_ms'):
             log_data['duration_ms'] = record.duration_ms
         
@@ -169,7 +172,7 @@ class OperationLogger:
             f"Policy upload: {policy_id}",
             extra={
                 'policy_id': policy_id,
-                'filename': filename,
+                'uploaded_filename': filename,  # 改为 uploaded_filename 避免与 LogRecord.filename 冲突
                 'operation': 'upload',
                 'success': success,
                 'error': error

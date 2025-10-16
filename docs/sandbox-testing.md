@@ -13,9 +13,7 @@
 
 示例命令：
 ```powershell
-curl -k -u admin:Admin_1234! -H "Content-Type: application/json-rpc" \
-  -d '[{"jsonrpc":"2.0","method":"cli","params":{"cmd":"show version","version":1},"id":1}]' \
-  https://sbx-nxos-mgmt.cisco.com/ins
+curl.exe -k -u admin:Admin_1234! -H "Content-Type: application/json-rpc" -d '[{"jsonrpc":"2.0","method":"cli","params":{"cmd":"show version","version":1},"id":1}]' https://sbx-nxos-mgmt.cisco.com/ins
 ```
 
 输出说明：服务器返回 JSON，包含 `result.body`，例中显示 `nxos_ver_str` 等字段，说明读接口可用且认证正常。
