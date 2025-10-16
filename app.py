@@ -45,25 +45,31 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     """主页 - 策略列表"""
-    return send_from_directory(Config.FRONTEND_DIR, 'index.html')
+    return send_from_directory(str(Config.FRONTEND_DIR), 'index.html')
 
 
 @app.route('/upload')
 def upload_page():
     """上传页面"""
-    return send_from_directory(Config.FRONTEND_DIR, 'upload.html')
+    return send_from_directory(str(Config.FRONTEND_DIR), 'upload.html')
 
 
 @app.route('/logs')
 def logs_page():
     """日志页面"""
-    return send_from_directory(Config.FRONTEND_DIR, 'logs.html')
+    return send_from_directory(str(Config.FRONTEND_DIR), 'logs.html')
+
+# 静态文件不在标准的 根目录 static 目录下
+# @app.route('/static/<path:path>')
+# def send_static(path):
+#     """静态文件服务"""
+#     return send_from_directory(str(Config.STATIC_DIR), path)
 
 
-@app.route('/static/<path:path>')
-def send_static(path):
-    """静态文件服务"""
-    return send_from_directory(Config.STATIC_DIR, path)
+@app.route('/frontend/static/<path:path>')
+def send_frontend_static(path):
+    """前端静态文件服务"""
+    return send_from_directory(str(Config.STATIC_DIR), path)
 
 
 # ============= REST API 端点 =============
