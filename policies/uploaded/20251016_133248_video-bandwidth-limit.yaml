@@ -1,0 +1,57 @@
+---
+# SDN QoS 策略示例 - 视频流量限速
+# 限制视频流量带宽，防止占用过多资源
+
+id: video-bandwidth-limit-v1
+name: "视频流量带宽限制策略"
+description: "限制视频流媒体流量带宽，避免影响关键业务"
+
+# 定义 ACL - 匹配视频流量
+access_lists:
+  - name: ACL_VIDEO_TRAFFIC
+    type: ipv4
+    rules:
+      # YouTube
+      - sequence: 10
+        action: permit
+        protocol: tcp
+        source: any
+        destination: 172.217.0.0/16
+        dest_port: [80, 443]
+      
+      # 常见视频端口
+      - sequence: 20
+        action: permit
+        protocol: tcp
+        source: any
+        destination: any
+        dest_port: [1935, 8080]    # RTMP, HTTP-ALT
+
+# 流分类
+class_maps:
+  - name: CLASS_VIDEO_STREAMING
+    match_type: match-any
+    conditions:
+      - type: access-group
+        name: ACL_VIDEO_TRAFFIC
+
+# 策略映射 - 带宽限制
+policy_maps:
+  - name: PM_BANDWIDTH_CONTROL
+    classes:
+      - class_name: CLASS_VIDEO_STREAMING
+        actions:
+          # 设置较低的 DSCP 值
+          - type: set
+            parameter: dscp
+            value: cs1              # Class Selector 1 (低优先级)
+          
+          # 限制带宽为 10Mbps
+          - type: police
+            rate: 10m
+
+# 应用到接口
+service_policies:
+  - interface: Ethernet1/2
+    direction: input
+    policy_map: PM_BANDWIDTH_CONTROL

@@ -1,0 +1,80 @@
+---
+# SDN QoS 策略示例 - 多级 QoS 策略
+# 综合策略：关键应用高优先级 + 视频限速 + 默认流量
+
+id: multi-tier-qos-v1
+name: "多级 QoS 综合策略"
+description: "三级 QoS 策略：关键应用（高优先级）、视频流（限速）、默认流量（标准）"
+
+# ACL 定义
+access_lists:
+  # 关键应用 ACL
+  - name: ACL_CRITICAL
+    type: ipv4
+    rules:
+      - sequence: 10
+        action: permit
+        protocol: tcp
+        source: 10.100.0.0/16
+        destination: any
+        dest_port: [80, 443]
+  
+  # 视频流量 ACL
+  - name: ACL_VIDEO
+    type: ipv4
+    rules:
+      - sequence: 10
+        action: permit
+        protocol: tcp
+        source: any
+        destination: any
+        dest_port: [1935, 8080]
+
+# Class-map 定义
+class_maps:
+  # 关键应用类
+  - name: CLASS_CRITICAL
+    match_type: match-any
+    conditions:
+      - type: access-group
+        name: ACL_CRITICAL
+  
+  # 视频流量类
+  - name: CLASS_VIDEO
+    match_type: match-any
+    conditions:
+      - type: access-group
+        name: ACL_VIDEO
+
+# Policy-map 定义
+policy_maps:
+  - name: PM_MULTI_TIER_QOS
+    classes:
+      # 第一级：关键应用 - 最高优先级
+      - class_name: CLASS_CRITICAL
+        actions:
+          - type: set
+            parameter: dscp
+            value: ef                # Expedited Forwarding
+      
+      # 第二级：视频流量 - 限速
+      - class_name: CLASS_VIDEO
+        actions:
+          - type: set
+            parameter: dscp
+            value: cs1               # Class Selector 1
+          - type: police
+            rate: 20m
+      
+      # 第三级：默认流量
+      - class_name: class-default
+        actions:
+          - type: set
+            parameter: dscp
+            value: default
+
+# 应用到接口
+service_policies:
+  - interface: Ethernet1/1
+    direction: input
+    policy_map: PM_MULTI_TIER_QOS

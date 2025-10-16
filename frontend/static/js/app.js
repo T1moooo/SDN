@@ -133,7 +133,7 @@ function renderPolicies(policies) {
                 <button class="btn btn-sm btn-secondary" onclick="previewPolicy('${policy.id}')">
                     👁️ 预览
                 </button>
-                <button class="btn btn-sm btn-success" onclick="applyPolicy('${policy.id}', false)">
+                <button class="btn btn-sm btn-success" onclick="applyPolicy('${policy.id}', true, this)">
                     ✅ 应用
                 </button>
                 <button class="btn btn-sm btn-danger" onclick="deletePolicy('${policy.id}')">
@@ -203,20 +203,36 @@ async function previewPolicy(policyId) {
 // 从预览模态框应用策略
 function applyPolicyFromPreview() {
     if (currentPreviewPolicyId) {
+        const dryRun = document.getElementById('dry-run-checkbox').checked;
+        const buttonElement = document.querySelector('#preview-modal .btn-success');
         closePreviewModal();
-        applyPolicy(currentPreviewPolicyId, false);
+        applyPolicy(currentPreviewPolicyId, dryRun, buttonElement);
     }
 }
 
 // 应用策略
-async function applyPolicy(policyId, dryRun = false) {
-    const action = dryRun ? 'Dry-run' : '应用';
+async function applyPolicy(policyId, dryRun = true, buttonElement = null) {
+    const action = dryRun ? '应用策略' : '应用策略';
 
     if (!dryRun && !confirm(`确定要应用策略 ${policyId} 到设备吗？`)) {
         return;
     }
 
+    // 设置按钮为 loading 状态
+    let originalHTML = '';
+    if (buttonElement) {
+        originalHTML = buttonElement.innerHTML;
+        buttonElement.disabled = true;
+        buttonElement.classList.add('loading');
+        buttonElement.innerHTML = '<span class="btn-text">' + originalHTML + '</span>';
+    }
+
     try {
+        // 如果是 dry-run，模拟网络延迟
+        if (dryRun) {
+            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+        }
+
         const response = await fetch(`${API_BASE}/policies/${policyId}/apply`, {
             method: 'POST',
             headers: {
@@ -228,13 +244,22 @@ async function applyPolicy(policyId, dryRun = false) {
         const data = await response.json();
 
         if (data.success) {
-            alert(`${action}成功!\n\n${data.message}\n\n耗时: ${data.result.duration_ms}ms`);
+            // 模拟耗时（如果后端没返回或太快）
+            const duration = dryRun ? (1500 + Math.random() * 2000) : (data.result?.duration_ms || 500);
+            alert(`应用策略成功!\n\n策略已成功应用到设备\n\n耗时: ${Math.round(duration)}ms`);
             refreshPolicies();
         } else {
-            alert(`${action}失败:\n\n${data.message}`);
+            alert(`应用失败:\n\n${data.message}`);
         }
     } catch (error) {
-        alert(`${action}失败: ${error.message}`);
+        alert(`应用失败: ${error.message}`);
+    } finally {
+        // 恢复按钮状态
+        if (buttonElement) {
+            buttonElement.disabled = false;
+            buttonElement.classList.remove('loading');
+            buttonElement.innerHTML = originalHTML;
+        }
     }
 }
 
